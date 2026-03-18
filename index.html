@@ -2,270 +2,348 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Alumni Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alumni Locations Map</title>
 
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
-  <!-- MarkerCluster -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
-  />
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-  <!-- PapaParse (CSV) -->
-  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     :root{
       --bg:#0b1220;
       --panel:#0f1a30;
-      --panel2:#101f3a;
-      --text:#e8eefc;
-      --muted:#b8c3e6;
-      --border:rgba(255,255,255,0.08);
-      --alumni:#3b82f6;
-      --job:#f59e0b;
-      --ok:#22c55e;
+      --text:#e7eefc;
+      --muted:#a9b7d1;
+      --border:rgba(255,255,255,0.12);
+      --shadow: 0 8px 24px rgba(0,0,0,0.35);
+      --radius:14px;
     }
-    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:linear-gradient(180deg,var(--bg), #070b14);
-      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
     header{
-      padding:16px 18px;
-      border-bottom:1px solid var(--border);
-      background:rgba(10,18,36,0.75);
-      backdrop-filter: blur(10px);
-      position:sticky;
-      top:0;
-      z-index:10;
+      padding: 18px 20px 10px;
     }
-    .row{
+    h1{
+      margin:0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .wrap{
+      padding: 12px 16px 18px;
+    }
+    .toolbar{
       display:flex;
-      gap:12px;
-      align-items:center;
       flex-wrap:wrap;
-      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
     }
-    .title{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-    }
-    h1{margin:0; font-size:18px; font-weight:700; letter-spacing:.2px}
-    .subtitle{margin:0; font-size:12px; color:var(--muted)}
-    .controls{
+    .group{
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
-      justify-content:flex-end;
     }
-    .chip{
+    .control{
       display:flex;
       gap:8px;
       align-items:center;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(15,26,48,0.9);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+    .control label{
+      font-size: 13px;
+      color: var(--muted);
     }
     input[type="text"], select{
-      background:transparent;
-      border:none;
-      outline:none;
-      color:var(--text);
-      font-size:13px;
-      min-width:220px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13px;
+      min-width: 220px;
     }
-    select{min-width:190px}
-    option{background:#0f1a30}
-    .toggles{
+    select{ min-width: 200px; }
+    .checks{
       display:flex;
-      gap:10px;
+      gap:14px;
       align-items:center;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(15,26,48,0.9);
+      padding: 6px 8px;
     }
-    .toggle{
+    .checks label{
       display:flex;
       gap:8px;
       align-items:center;
-      font-size:13px;
-      color:var(--muted);
+      font-size: 13px;
+      color: var(--text);
+      cursor:pointer;
       user-select:none;
     }
-    .toggle input{transform: translateY(1px);}
-    .legend{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      font-size:12px;
-      color:var(--muted);
-      padding:8px 12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(15,26,48,0.7);
-    }
-    .dot{
-      width:10px;height:10px;border-radius:50%;
-      display:inline-block;margin-right:6px;
-    }
-    .dot.alumni{background:var(--alumni)}
-    .dot.job{background:var(--job)}
     .status{
-      display:flex; align-items:center; gap:8px;
-      font-size:12px; color:var(--muted);
-      padding:8px 12px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:rgba(15,26,48,0.7);
+      margin-left:auto;
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 520px;
+      line-height: 1.2;
+    }
+    .status a{ color: var(--text); text-decoration: underline; }
+    #map{
+      margin-top: 12px;
+      height: calc(100vh - 170px);
+      border-radius: var(--radius);
+      overflow:hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: #0a1020;
     }
     .pill{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:4px 8px; border-radius:999px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,0.03);
-      color:var(--muted);
+      display:inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      margin-left: 6px;
+      font-size: 12px;
+      color: var(--text);
     }
-    .okdot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
-    main{padding:14px}
-    #map{
-      height: calc(100vh - 120px);
-      border-radius:18px;
-      border:1px solid var(--border);
-      overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    .leaflet-popup-content{
+      margin: 10px 12px;
+      line-height: 1.35;
+      font-size: 13px;
     }
-
-    /* Nice marker (colored circle) */
-    .marker-badge{
-      width:14px;height:14px;border-radius:999px;
-      border:2px solid rgba(255,255,255,0.9);
-      box-shadow:0 6px 14px rgba(0,0,0,0.35);
+    .popup-title{
+      font-weight: 700;
+      margin-bottom: 6px;
     }
-    .marker-alumni{background:var(--alumni)}
-    .marker-job{background:var(--job)}
-
-    /* Popup styling */
-    .popup h3{margin:0 0 6px 0; font-size:14px}
-    .popup .small{margin:0; font-size:12px; color:#2b2b2b}
-    .popup .muted{color:#4b5563}
-    .popup a{color:#2563eb; text-decoration:none}
-    .popup a:hover{text-decoration:underline}
-
-    @media (max-width: 760px){
-      input[type="text"]{min-width:160px}
-      select{min-width:160px}
-      #map{height: calc(100vh - 155px);}
+    .kv{
+      color:#1a1a1a;
+    }
+    .popup-row{
+      margin: 2px 0;
+      color:#111;
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
     }
   </style>
 </head>
 
 <body>
   <header>
-    <div class="row">
-      <div class="title">
-        <h1>Alumni Locations Map</h1>
-        <p class="subtitle">Alumni location + job location (toggle). Data loaded from <span class="pill">data/alumni.csv</span></p>
-      </div>
+    <h1>Alumni Locations Map</h1>
+    <div class="sub">
+      Alumni location + job location (toggle). Data loaded from <span id="csvBadge" class="pill">data/alumni.csv</span>
+    </div>
+  </header>
 
-      <div class="controls">
-        <div class="chip" title="Search by name, city, country, company, job title, program">
-          🔎
-          <input id="searchBox" type="text" placeholder="Search alumni…" />
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="group">
+        <div class="control">
+          <label>Search</label>
+          <input id="searchBox" type="text" placeholder="Name / country / city / org…" />
         </div>
 
-        <div class="chip" title="Filter by program">
-          🎓
-          <select id="programFilter">
+        <div class="control">
+          <label>Program</label>
+          <select id="programSelect">
             <option value="">All programs</option>
           </select>
         </div>
 
-        <div class="toggles" title="Show/hide marker layers">
-          <label class="toggle"><input id="showAlumni" type="checkbox" checked /> Alumni location</label>
-          <label class="toggle"><input id="showJob" type="checkbox" checked /> Job location</label>
-        </div>
-
-        <div class="legend" title="Legend">
-          <span><span class="dot alumni"></span> Alumni</span>
-          <span><span class="dot job"></span> Job</span>
-        </div>
-
-        <div class="status" id="status">
-          <span class="okdot"></span>
-          <span id="statusText">Loading…</span>
+        <div class="control checks">
+          <label><input type="checkbox" id="showAlumni" checked /> Alumni location</label>
+          <label><input type="checkbox" id="showJob" checked /> Job location</label>
         </div>
       </div>
-    </div>
-  </header>
 
-  <main>
+      <div class="status" id="status">
+        Loading…
+      </div>
+    </div>
+
     <div id="map"></div>
-  </main>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <script>
-    // =========================
-    // CONFIG
-    // =========================
-    const CSV_URL = "data/alumni.csv"; // keep this relative for GitHub Pages
-    const DEFAULT_VIEW = [20, 0];
-    const DEFAULT_ZOOM = 2;
+    // ====== CONFIG ======
+    const CONFIG = {
+      csvPath: "data/alumni.csv"
+    };
 
-    // =========================
-    // HELPERS
-    // =========================
-    const $ = (id) => document.getElementById(id);
+    // ====== MAP INIT ======
+    const map = L.map("map", { worldCopyJump: true }).setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
-    function norm(s){
-      return String(s ?? "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_")
-        .replace(/[^\w]/g, "");
-    }
+    const alumniLayer = L.layerGroup().addTo(map);
+    const jobLayer = L.layerGroup().addTo(map);
 
-    function toNumber(v){
-      const n = Number(String(v ?? "").replace(",", "."));
+    // ====== UI ======
+    const statusEl = document.getElementById("status");
+    const hintEl = document.getElementById("hint");
+    const programSelect = document.getElementById("programSelect");
+    const searchBox = document.getElementById("searchBox");
+    const showAlumni = document.getElementById("showAlumni");
+    const showJob = document.getElementById("showJob");
+    document.getElementById("csvBadge").textContent = CONFIG.csvPath;
+
+    // ====== HELPERS ======
+    const norm = (s) => String(s || "").toLowerCase().trim()
+      .replace(/[\s\-\/]+/g, "_")
+      .replace(/[^\w_]/g, "");
+
+    function parseNum(v){
+      if (v === null || v === undefined) return null;
+      let s = String(v).trim();
+      if (!s) return null;
+
+      // handle comma decimals "12,34"
+      if (s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
+      const n = Number(s);
       return Number.isFinite(n) ? n : null;
     }
 
-    function pickCol(headers, aliases){
-      // headers: array of original header strings
-      // aliases: array of normalized candidate names
-      const map = new Map(headers.map(h => [norm(h), h]));
-      for (const a of aliases){
-        if (map.has(a)) return map.get(a);
+    function bestHeader(headers, wantTokens, latLonTokens, avoidTokens){
+      let best = null, bestScore = -1;
+      for (const h of headers){
+        const n = norm(h);
+        if (avoidTokens.some(t => n.includes(t))) continue;
+
+        let score = 0;
+        for (const t of wantTokens) if (n.includes(t)) score += 3;
+        for (const t of latLonTokens) if (n.includes(t)) score += 1;
+
+        if (score > bestScore){
+          bestScore = score;
+          best = h;
+        }
       }
-      return null;
+      return bestScore > 0 ? best : null;
     }
 
-    function safeText(v){
-      // basic escape for popup HTML
-      return String(v ?? "")
+    function findColumns(headers){
+      const LAT = ["lat", "latitude"];
+      const LON = ["lon", "lng", "long", "longitude"];
+
+      // alumni lat/lon
+      const alumniLat = bestHeader(headers,
+        ["alumni","home","origin","study","residence"],
+        LAT,
+        ["job","work","employment","employer","company"]
+      );
+      const alumniLon = bestHeader(headers,
+        ["alumni","home","origin","study","residence"],
+        LON,
+        ["job","work","employment","employer","company"]
+      );
+
+      // job lat/lon
+      const jobLat = bestHeader(headers,
+        ["job","work","employment","employer","company","current"],
+        LAT,
+        ["alumni","home","origin","study"]
+      );
+      const jobLon = bestHeader(headers,
+        ["job","work","employment","employer","company","current"],
+        LON,
+        ["alumni","home","origin","study"]
+      );
+
+      // common fields
+      const program = bestHeader(headers, ["program"], ["program"], []);
+      const name = bestHeader(headers, ["name","alumni_name","full_name"], ["name"], []);
+      const email = bestHeader(headers, ["email"], ["email"], []);
+
+      return { alumniLat, alumniLon, jobLat, jobLon, program, name, email };
+    }
+
+    function buildProgramOptions(rows, programCol){
+      if (!programCol) return;
+      const set = new Set();
+      rows.forEach(r => {
+        const v = (r[programCol] ?? "").toString().trim();
+        if (v) set.add(v);
+      });
+      [...set].sort((a,b)=>a.localeCompare(b)).forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        programSelect.appendChild(opt);
+      });
+    }
+
+    function rowMatchesFilter(row, q, programCol){
+      const programVal = programSelect.value;
+      if (programVal && programCol){
+        const v = (row[programCol] ?? "").toString().trim();
+        if (v !== programVal) return false;
+      }
+      if (!q) return true;
+
+      // search across all columns
+      const blob = Object.values(row).join(" ").toLowerCase();
+      return blob.includes(q);
+    }
+
+    function popupHtml(row, cols, type){
+      const title = cols.name ? (row[cols.name] ?? "").toString().trim() : "";
+      const program = cols.program ? (row[cols.program] ?? "").toString().trim() : "";
+      const email = cols.email ? (row[cols.email] ?? "").toString().trim() : "";
+
+      // Show a few useful columns if present (without needing exact schema)
+      const maybeFields = [
+        "Country","City","Organization","Organisation","Company","Employer","Job Title","Title","Position",
+        "Year","Graduation Year","Cohort","Program","Programme"
+      ];
+
+      const headerKeys = Object.keys(row);
+      const interesting = [];
+      for (const key of headerKeys){
+        const nk = norm(key);
+        if (nk.includes("lat") || nk.includes("lon") || nk.includes("lng") || nk.includes("long")) continue;
+        if (maybeFields.some(m => norm(m) === nk || nk.includes(norm(m)))) {
+          const val = (row[key] ?? "").toString().trim();
+          if (val) interesting.push([key, val]);
+        }
+      }
+
+      const locationLabel = (type === "alumni") ? "Alumni location" : "Job location";
+
+      return `
+        <div class="popup-title">${title || "Alumni"}</div>
+        ${program ? `<div class="popup-row"><b>Program:</b> ${escapeHtml(program)}</div>` : ""}
+        ${email ? `<div class="popup-row"><b>Email:</b> ${escapeHtml(email)}</div>` : ""}
+        <div class="popup-row"><b>${locationLabel}</b></div>
+        ${interesting.slice(0, 10).map(([k,v]) => `<div class="popup-row"><b>${escapeHtml(k)}:</b> ${escapeHtml(v)}</div>`).join("")}
+      `;
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -273,240 +351,118 @@
         .replaceAll("'", "&#039;");
     }
 
-    function buildPopup(row){
-      const name = safeText(row.name || "Unknown");
-      const program = safeText(row.program || "");
-      const grad = safeText(row.gradYear || "");
-      const alumniPlace = [row.alumniCity, row.alumniCountry].filter(Boolean).map(safeText).join(", ");
-      const jobPlace = [row.jobCity, row.jobCountry].filter(Boolean).map(safeText).join(", ");
-      const jobTitle = safeText(row.jobTitle || "");
-      const company = safeText(row.company || "");
-      const linkedIn = String(row.linkedin || "").trim();
-
-      let html = `<div class="popup">`;
-      html += `<h3>${name}</h3>`;
-
-      const line1 = [program, grad ? `Class of ${grad}` : ""].filter(Boolean).join(" • ");
-      if (line1) html += `<p class="small muted">${line1}</p>`;
-
-      if (alumniPlace) html += `<p class="small"><b>Alumni:</b> ${alumniPlace}</p>`;
-      if (jobTitle || company || jobPlace){
-        const jt = [jobTitle, company].filter(Boolean).join(" @ ");
-        html += `<p class="small"><b>Job:</b> ${[jt, jobPlace].filter(Boolean).join(" • ")}</p>`;
-      }
-
-      if (linkedIn && /^https?:\/\//i.test(linkedIn)){
-        html += `<p class="small"><a href="${safeText(linkedIn)}" target="_blank" rel="noopener">LinkedIn</a></p>`;
-      }
-      html += `</div>`;
-      return html;
+    function clearLayers(){
+      alumniLayer.clearLayers();
+      jobLayer.clearLayers();
     }
 
-    function makeDotIcon(type){
-      const cls = type === "job" ? "marker-badge marker-job" : "marker-badge marker-alumni";
-      return L.divIcon({
-        className: "",
-        html: `<div class="${cls}"></div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -10]
-      });
-    }
+    function render(rows, cols){
+      clearLayers();
 
-    // =========================
-    // MAP SETUP
-    // =========================
-    const map = L.map("map", { worldCopyJump: true }).setView(DEFAULT_VIEW, DEFAULT_ZOOM);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const alumniCluster = L.markerClusterGroup({ showCoverageOnHover:false, maxClusterRadius: 45 });
-    const jobCluster = L.markerClusterGroup({ showCoverageOnHover:false, maxClusterRadius: 45 });
-
-    // Stored rows (normalized)
-    let ALL_ROWS = [];
-
-    // =========================
-    // UI
-    // =========================
-    const statusText = $("statusText");
-    const searchBox = $("searchBox");
-    const programFilter = $("programFilter");
-    const showAlumni = $("showAlumni");
-    const showJob = $("showJob");
-
-    function setStatus(msg){
-      statusText.textContent = msg;
-    }
-
-    function updateLayerVisibility(){
-      const alumniOn = showAlumni.checked;
-      const jobOn = showJob.checked;
-
-      if (alumniOn && !map.hasLayer(alumniCluster)) map.addLayer(alumniCluster);
-      if (!alumniOn && map.hasLayer(alumniCluster)) map.removeLayer(alumniCluster);
-
-      if (jobOn && !map.hasLayer(jobCluster)) map.addLayer(jobCluster);
-      if (!jobOn && map.hasLayer(jobCluster)) map.removeLayer(jobCluster);
-    }
-
-    function fillProgramOptions(rows){
-      const programs = [...new Set(rows.map(r => (r.program || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-      // reset (keep first option)
-      programFilter.innerHTML = `<option value="">All programs</option>`;
-      for (const p of programs){
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = p;
-        programFilter.appendChild(opt);
-      }
-    }
-
-    function matchesQuery(row, q){
-      if (!q) return true;
-      const hay = [
-        row.name, row.program, row.gradYear,
-        row.alumniCity, row.alumniCountry,
-        row.jobTitle, row.company, row.jobCity, row.jobCountry
-      ].join(" ").toLowerCase();
-      return hay.includes(q);
-    }
-
-    function matchesProgram(row, program){
-      if (!program) return true;
-      return (row.program || "").trim() === program;
-    }
-
-    function rebuildMarkers(){
-      alumniCluster.clearLayers();
-      jobCluster.clearLayers();
-
-      const q = (searchBox.value || "").trim().toLowerCase();
-      const p = programFilter.value || "";
+      const q = searchBox.value.trim().toLowerCase();
+      const filtered = rows.filter(r => rowMatchesFilter(r, q, cols.program));
 
       let alumniCount = 0;
       let jobCount = 0;
 
-      for (const r of ALL_ROWS){
-        if (!matchesQuery(r, q)) continue;
-        if (!matchesProgram(r, p)) continue;
-
-        // Alumni marker
-        if (r.alumniLat != null && r.alumniLon != null){
-          const mA = L.marker([r.alumniLat, r.alumniLon], { icon: makeDotIcon("alumni") })
-            .bindPopup(buildPopup(r));
-          alumniCluster.addLayer(mA);
-          alumniCount++;
+      for (const row of filtered){
+        if (showAlumni.checked && cols.alumniLat && cols.alumniLon){
+          const lat = parseNum(row[cols.alumniLat]);
+          const lon = parseNum(row[cols.alumniLon]);
+          if (lat !== null && lon !== null){
+            alumniCount++;
+            L.circleMarker([lat, lon], {
+              radius: 6, weight: 2, opacity: 1, fillOpacity: 0.7
+            }).bindPopup(popupHtml(row, cols, "alumni")).addTo(alumniLayer);
+          }
         }
 
-        // Job marker
-        if (r.jobLat != null && r.jobLon != null){
-          const mJ = L.marker([r.jobLat, r.jobLon], { icon: makeDotIcon("job") })
-            .bindPopup(buildPopup(r));
-          jobCluster.addLayer(mJ);
-          jobCount++;
+        if (showJob.checked && cols.jobLat && cols.jobLon){
+          const lat = parseNum(row[cols.jobLat]);
+          const lon = parseNum(row[cols.jobLon]);
+          if (lat !== null && lon !== null){
+            jobCount++;
+            L.circleMarker([lat, lon], {
+              radius: 6, weight: 2, opacity: 1, fillOpacity: 0.7
+            }).bindPopup(popupHtml(row, cols, "job")).addTo(jobLayer);
+          }
         }
       }
 
-      updateLayerVisibility();
-      const totalShown = alumniCount + jobCount;
-      setStatus(`Showing ${totalShown.toLocaleString()} markers (${alumniCount} alumni, ${jobCount} job)`);
+      const totalMarkers = alumniCount + jobCount;
+
+      statusEl.innerHTML = `
+        Showing <b>${totalMarkers}</b> markers
+        (<b>${alumniCount}</b> alumni, <b>${jobCount}</b> job).
+        <span class="pill">Columns: A(${cols.alumniLat || "?"}, ${cols.alumniLon || "?"}) • J(${cols.jobLat || "?"}, ${cols.jobLon || "?"})</span>
+        <a href="${new URL(CONFIG.csvPath, document.baseURI).toString()}" target="_blank" rel="noopener">Open CSV</a>
+      `;
+
+      // Fit bounds if markers exist
+      const all = [];
+      alumniLayer.eachLayer(l => all.push(l.getLatLng()));
+      jobLayer.eachLayer(l => all.push(l.getLatLng()));
+      if (all.length){
+        const b = L.latLngBounds(all);
+        map.fitBounds(b.pad(0.2));
+        hintEl.textContent = "";
+      } else {
+        hintEl.textContent =
+          "No points found. If your CSV opens fine, your latitude/longitude columns may have different names (or values are blank/non-numeric). Check the 'Columns: A(...) • J(...)' hint above.";
+      }
     }
 
-    // debounce for smoother typing
-    function debounce(fn, ms){
-      let t = null;
-      return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(()=>fn(...args), ms);
-      };
-    }
+    async function loadCsv(){
+      const csvUrl = new URL(CONFIG.csvPath, document.baseURI).toString();
 
-    searchBox.addEventListener("input", debounce(rebuildMarkers, 200));
-    programFilter.addEventListener("change", rebuildMarkers);
-    showAlumni.addEventListener("change", updateLayerVisibility);
-    showJob.addEventListener("change", updateLayerVisibility);
-
-    // =========================
-    // LOAD CSV
-    // =========================
-    function loadCsv(){
-      setStatus("Loading data…");
-
-      Papa.parse(CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          const rows = results.data || [];
-          const headers = results.meta?.fields || [];
-
-          // Column auto-detection (robust to small naming differences)
-          const col = {
-            name: pickCol(headers, ["name","full_name","alumni_name","student_name"]),
-            program: pickCol(headers, ["program","programme","degree","track"]),
-            gradYear: pickCol(headers, ["graduationyear","graduation_year","grad_year","class_year","cohort_year"]),
-
-            alumniCity: pickCol(headers, ["alumnicity","alumni_city","city","home_city","location_city"]),
-            alumniCountry: pickCol(headers, ["alumnicountry","alumni_country","country","home_country","location_country"]),
-            alumniLat: pickCol(headers, ["alumnilat","alumni_lat","lat","latitude","home_lat"]),
-            alumniLon: pickCol(headers, ["alumnilon","alumni_lon","lon","lng","longitude","home_lon","home_lng"]),
-
-            jobTitle: pickCol(headers, ["jobtitle","job_title","title","position"]),
-            company: pickCol(headers, ["company","employer","organization","organisation"]),
-            jobCity: pickCol(headers, ["jobcity","job_city","work_city","employment_city"]),
-            jobCountry: pickCol(headers, ["jobcountry","job_country","work_country","employment_country"]),
-            jobLat: pickCol(headers, ["joblat","job_lat","work_lat","employment_lat"]),
-            jobLon: pickCol(headers, ["joblon","job_lon","work_lon","work_lng","employment_lon","employment_lng"]),
-
-            linkedin: pickCol(headers, ["linkedin","linkedin_url","linkedinprofile","linkedin_profile","profile_url"])
-          };
-
-          // Normalize rows into consistent shape
-          ALL_ROWS = rows.map(r => ({
-            name: r[col.name] ?? "",
-            program: r[col.program] ?? "",
-            gradYear: r[col.gradYear] ?? "",
-
-            alumniCity: r[col.alumniCity] ?? "",
-            alumniCountry: r[col.alumniCountry] ?? "",
-            alumniLat: toNumber(r[col.alumniLat]),
-            alumniLon: toNumber(r[col.alumniLon]),
-
-            jobTitle: r[col.jobTitle] ?? "",
-            company: r[col.company] ?? "",
-            jobCity: r[col.jobCity] ?? "",
-            jobCountry: r[col.jobCountry] ?? "",
-            jobLat: toNumber(r[col.jobLat]),
-            jobLon: toNumber(r[col.jobLon]),
-
-            linkedin: r[col.linkedin] ?? ""
-          }));
-
-          fillProgramOptions(ALL_ROWS);
-
-          // Add layers initially
-          map.addLayer(alumniCluster);
-          map.addLayer(jobCluster);
-
-          rebuildMarkers();
-
-          // If markers exist, zoom to them (nicely)
-          const allBounds = L.latLngBounds([]);
-          alumniCluster.eachLayer(l => allBounds.extend(l.getLatLng()));
-          jobCluster.eachLayer(l => allBounds.extend(l.getLatLng()));
-          if (allBounds.isValid()){
-            map.fitBounds(allBounds.pad(0.15));
-          }
-        },
-        error: (err) => {
-          console.error(err);
-          setStatus("Failed to load CSV. Check that data/alumni.csv exists in your repo.");
+      try{
+        statusEl.textContent = "Loading CSV…";
+        const res = await fetch(csvUrl, { cache: "no-store" });
+        if (!res.ok){
+          throw new Error(`CSV not found (${res.status}). Expected at: ${csvUrl}`);
         }
-      });
+        const text = await res.text();
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+
+        if (parsed.errors && parsed.errors.length){
+          console.warn("CSV parse warnings:", parsed.errors);
+        }
+
+        const rows = (parsed.data || []).filter(r => Object.keys(r).length > 0);
+        if (!rows.length){
+          throw new Error("CSV loaded, but it has 0 data rows (check if the header row is correct).");
+        }
+
+        const headers = Object.keys(rows[0]);
+        const cols = findColumns(headers);
+
+        // If we can't detect any lat/lon columns, stop early with a helpful message
+        const hasAnyGeo = (cols.alumniLat && cols.alumniLon) || (cols.jobLat && cols.jobLon);
+        if (!hasAnyGeo){
+          throw new Error(
+            "CSV loaded, but could not detect latitude/longitude columns. " +
+            "Rename columns like 'Alumni Latitude', 'Alumni Longitude', 'Job Latitude', 'Job Longitude' (or similar)."
+          );
+        }
+
+        buildProgramOptions(rows, cols.program);
+
+        // Attach events once
+        const rerender = () => render(rows, cols);
+        searchBox.addEventListener("input", rerender);
+        programSelect.addEventListener("change", rerender);
+        showAlumni.addEventListener("change", rerender);
+        showJob.addEventListener("change", rerender);
+
+        statusEl.innerHTML = `Loaded <b>${rows.length}</b> rows. Detecting columns…`;
+        render(rows, cols);
+
+      } catch (err){
+        console.error(err);
+        statusEl.innerHTML = `<b style="color:#ffb4b4">Error:</b> ${escapeHtml(err.message)}`;
+        hintEl.textContent =
+          "Fix: confirm your CSV path and filename (case-sensitive). Then confirm your column names for lat/lon.";
+      }
     }
 
     loadCsv();
